@@ -20,7 +20,13 @@
       padding-top: 1.5rem;
     }
     h2 {
+      margin-bottom: 0.25rem;
+    }
+    #count-info {
+      margin-top: 0;
       margin-bottom: 1rem;
+      font-size: 1rem;
+      color: #333;
     }
     #scanner-container {
       position: relative;
@@ -63,6 +69,7 @@
 </head>
 <body>
   <h2>QR Code Logger</h2>
+  <p id="count-info">Scanned <span id="count">0</span> unique QR code(s). You can scan unlimited codes.</p>
   <div id="scanner-container">
     <div id="reader"></div>
   </div>
@@ -85,6 +92,7 @@
         li.textContent = code;
         ul.appendChild(li);
       });
+      document.getElementById("count").textContent = scannedCodes.size;
     }
 
     function downloadJson() {
@@ -113,13 +121,15 @@
               qrbox: { width: 200, height: 200 }
             },
             qrCodeMessage => {
+              // Add scanned code if new, update log — do NOT stop scanning!
               if (!scannedCodes.has(qrCodeMessage)) {
                 scannedCodes.add(qrCodeMessage);
                 updateLog();
               }
             },
             errorMessage => {
-              // Optional: handle decode errors or ignore
+              // Optional: ignore or log decode errors
+              // console.log("Decode error", errorMessage);
             }
           ).catch(err => {
             alert("Camera start error: " + err);
