@@ -70,6 +70,8 @@
       display: none;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
       animation: fadeIn 0.3s ease;
+      user-select: none;
+      pointer-events: none;
     }
 
     @keyframes fadeIn {
@@ -79,7 +81,7 @@
 
     #popup .icon {
       font-size: 2.5rem;
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.5rem;
     }
 
     #countdown {
@@ -141,6 +143,7 @@
     function startScanner() {
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
+          // Prefer back camera if available
           const backCamera = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
           html5QrCode.start(
             { deviceId: { exact: backCamera.id } },
@@ -150,12 +153,16 @@
             },
             qrCodeMessage => {
               html5QrCode.stop().then(() => {
-                const match = qrCodeMessage.trim() === correctQR.trim();
+                // Normalize by removing whitespace and check if correctQR is contained
+                const scannedNormalized = qrCodeMessage.replace(/\s+/g, '');
+                const correctNormalized = correctQR.replace(/\s+/g, '');
+                const match = scannedNormalized.includes(correctNormalized);
                 showPopup(match);
               });
             },
             errorMessage => {
-              // Ignore decode errors
+              // You can log decode errors here if needed
+              // console.log("Decode error", errorMessage);
             }
           ).catch(err => {
             document.getElementById("error-message").innerText = "Camera start error: " + err;
