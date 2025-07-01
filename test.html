@@ -150,7 +150,7 @@
             },
             qrCodeMessage => {
               html5QrCode.stop().then(() => {
-                const match = qrCodeMessage === correctQR;
+                const match = qrCodeMessage.trim() === correctQR.trim();
                 showPopup(match);
               });
             },
