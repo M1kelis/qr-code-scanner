@@ -1,53 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Document</title>
-</head>
-<body data-rsssl=1>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code Match</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"
+    integrity="sha512-k/KAe4Yff9EUdYI5/IAHlwUswqeipP+Cp5qnrsUjTPCgl51La2/JhyyjNciztD7mWNKLSXci48m7cctATKfLlQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      transition: background-color 0.3s ease;
+    }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js" integrity="sha512-k/KAe4Yff9EUdYI5/IAHlwUswqeipP+Cp5qnrsUjTPCgl51La2/JhyyjNciztD7mWNKLSXci48m7cctATKfLlQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<style>
-main {
-display: flex;
-justify-content: center;
-align-items: center;
-}
-#reader {
-width: 600px;
-}
-#result {
-text-align: center;
-font-size: 1.5rem;
-}
-</style>
-<main>
-<div id="reader"></div>
-<div id="result"></div>
-</main>
-<script>
-const scanner = new Html5QrcodeScanner('reader', {
-qrbox: {
-width: 250,
-height: 250,
-},
-fps: 20,
-});
-scanner.render(success, error);
-function success(result) {
-document.getElementById('result').innerHTML = `
-<h2>Success!</h2>
-<p><a href="${result}">${result}</a></p>
-`;
-scanner.clear();
-document.getElementById('reader').remove();
-}
-function error(err) {
-console.error(err);
-}
-</script>
-  
+    h2 {
+      margin-top: 1rem;
+    }
+
+    #reader {
+      position: relative;
+      width: 90vw;
+      max-width: 400px;
+      aspect-ratio: 1;
+      margin-top: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #qr-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      border: 3px solid #00b4d8;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      pointer-events: none;
+      box-sizing: border-box;
+      border-radius: 8px;
+    }
+
+    #message {
+      font-size: 1.5rem;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    #icon {
+      font-size: 2rem;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    #error-message {
+      color: red;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body data-rsssl="1">
+  <h2>QR Code Scanner</h2>
+  <div id="reader">
+    <div id="qr-overlay"></div>
+  </div>
+  <div id="message"></div>
+  <div id="error-message"></div>
+  <div class="footer">Align QR code inside the blue box</div>
+
+  <script>
+    const correctQR = "LCJUmFXD9d4ydgo1caTAkmIS BugXBiDMUhf0NnOjHkp61KwoYSxZhaIb bOenoSah8LXRuANUlNt4==";
+    const html5QrCode = new Html5Qrcode("reader");
+
+    function resetUI() {
+      document.body.style.backgroundColor = "white";
+      document.getElementById("message").innerHTML = "";
+      document.getElementById("error-message").innerText = "";
+    }
+
+    function showResult(match) {
+      if (match) {
+        document.body.style.backgroundColor = "#b2f2bb"; // green
+        document.getElementById("message").innerHTML = '<span id="icon">✅</span>Match!';
+      } else {
+        document.body.style.backgroundColor = "#ffa8a8"; // red
+        document.getElementById("message").innerHTML = '<span id="icon">❌</span>Does not match!';
+      }
+    }
+
+    function startScanner() {
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          const backCamera = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
+          html5QrCode.start(
+            { deviceId: { exact: backCamera.id } },
+            {
+              fps: 10,
+              qrbox: { width: 200, height: 200 }
+            },
+            qrCodeMessage => {
+              html5QrCode.stop().then(() => {
+                const match = qrCodeMessage === correctQR;
+                showResult(match);
+                setTimeout(() => {
+                  resetUI();
+                  startScanner();
+                }, 5000);
+              });
+            },
+            errorMessage => {
+              // Ignore decode errors
+            }
+          ).catch(err => {
+            document.getElementById("error-message").innerText = "Camera start error: " + err;
+          });
+        } else {
+          document.getElementById("error-message").innerText = "No camera devices found.";
+        }
+      }).catch(err => {
+        document.getElementById("error-message").innerText = "Camera access error: " + err;
+      });
+    }
+
+    startScanner();
+  </script>
 </body>
 </html>
