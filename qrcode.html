@@ -43,8 +43,8 @@
       transform: translate(-50%, -50%);
       z-index: 10;
       pointer-events: none;
-      box-sizing: border-box;
       border-radius: 8px;
+      box-sizing: border-box;
     }
 
     #message {
@@ -66,6 +66,11 @@
       font-size: 0.9rem;
       color: #555;
     }
+
+    .error {
+      color: red;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -76,14 +81,17 @@
   </div>
 
   <div id="message"></div>
+  <div id="error-message" class="error"></div>
   <div class="footer">Align QR code inside the blue box</div>
 
   <script>
     const correctQR = "LCJUmFXD9d4ydgo1caTAkmIS BugXBiDMUhf0NnOjHkp61KwoYSxZhaIb bOenoSah8LXRuANUlNt4==";
+    const html5QrCode = new Html5Qrcode("reader");
 
     function resetUI() {
       document.body.style.backgroundColor = "white";
       document.getElementById("message").innerHTML = "";
+      document.getElementById("error-message").innerText = "";
     }
 
     function showResult(match) {
@@ -96,31 +104,38 @@
       }
     }
 
-    const html5QrCode = new Html5Qrcode("reader");
-
     function startScanner() {
-      html5QrCode.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 200, height: 200 }, // match overlay
-          aspectRatio: 1
-        },
-        qrCodeMessage => {
-          html5QrCode.stop().then(() => {
-            const match = qrCodeMessage === correctQR;
-            showResult(match);
-            setTimeout(() => {
-              resetUI();
-              startScanner();
-            }, 5000);
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          html5QrCode.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 200, height: 200 }
+            },
+            qrCodeMessage => {
+              html5QrCode.stop().then(() => {
+                const match = qrCodeMessage === correctQR;
+                showResult(match);
+                setTimeout(() => {
+                  resetUI();
+                  startScanner();
+                }, 5000);
+              });
+            },
+            errorMessage => {
+              // Scanning error — do nothing
+            }
+          ).catch(err => {
+            document.getElementById("error-message").innerText =
+              "Camera access failed: " + err;
           });
-        },
-        errorMessage => {
-          // Ignore decode errors
+        } else {
+          document.getElementById("error-message").innerText = "No cameras found.";
         }
-      ).catch(err => {
-        console.error("Error starting scanner:", err);
+      }).catch(err => {
+        document.getElementById("error-message").innerText =
+          "Error getting cameras: " + err;
       });
     }
 
