@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>QR Code Matcher</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.9/minified/html5-qrcode.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background-color: white;
+      transition: background-color 0.3s ease;
+    }
+
+    h2 {
+      margin-top: 1rem;
+    }
+
+    #reader {
+      position: relative;
+      width: 90vw;
+      max-width: 400px;
+      aspect-ratio: 1;
+      margin-top: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #qr-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      border: 3px solid #00b4d8;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      pointer-events: none;
+      box-sizing: border-box;
+      border-radius: 8px;
+    }
+
+    #message {
+      font-size: 1.5rem;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    #icon {
+      font-size: 2rem;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h2>QR Code Scanner</h2>
+
+  <div id="reader">
+    <div id="qr-overlay"></div>
+  </div>
+
+  <div id="message"></div>
+  <div class="footer">Align QR code inside the blue box</div>
+
+  <script>
+    const correctQR = "LCJUmFXD9d4ydgo1caTAkmIS BugXBiDMUhf0NnOjHkp61KwoYSxZhaIb bOenoSah8LXRuANUlNt4==";
+
+    function resetUI() {
+      document.body.style.backgroundColor = "white";
+      document.getElementById("message").innerHTML = "";
+    }
+
+    function showResult(match) {
+      if (match) {
+        document.body.style.backgroundColor = "#b2f2bb"; // light green
+        document.getElementById("message").innerHTML = '<span id="icon">✅</span>Match!';
+      } else {
+        document.body.style.backgroundColor = "#ffa8a8"; // light red
+        document.getElementById("message").innerHTML = '<span id="icon">❌</span>Does not match!';
+      }
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    function startScanner() {
+      html5QrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 200, height: 200 }, // match overlay
+          aspectRatio: 1
+        },
+        qrCodeMessage => {
+          html5QrCode.stop().then(() => {
+            const match = qrCodeMessage === correctQR;
+            showResult(match);
+            setTimeout(() => {
+              resetUI();
+              startScanner();
+            }, 5000);
+          });
+        },
+        errorMessage => {
+          // Ignore decode errors
+        }
+      ).catch(err => {
+        console.error("Error starting scanner:", err);
+      });
+    }
+
+    startScanner();
+  </script>
+</body>
+</html>
